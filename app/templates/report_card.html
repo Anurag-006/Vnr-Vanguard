@@ -2,52 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Report Card - {{ student.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ student.name }} | Transcript</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
-        .report-box { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header { border-bottom: 2px solid #3498db; margin-bottom: 20px; padding-bottom: 10px; }
-        .student-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.1em; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: #3498db; color: white; }
-        .footer { margin-top: 20px; text-align: right; font-size: 1.2em; font-weight: bold; color: #2c3e50; }
-        .pass { color: green; font-weight: bold; }
-        .fail { color: red; font-weight: bold; }
+        :root {
+            --bg: #0b0f1a;
+            --surface: #161b2c;
+            --accent: #38bdf8;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .report-container {
+            width: 100%;
+            max-width: 850px; /* Slightly wider to accommodate the new column */
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* --- Profile Card --- */
+        .profile-card {
+            background: var(--surface);
+            border-radius: 32px;
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .info h1 { font-size: 2rem; margin: 0; letter-spacing: -1px; }
+        .info p { color: var(--text-dim); margin: 5px 0 0 0; font-size: 1.1rem; }
+
+        .sgpa-circle {
+            width: 100px;
+            height: 100px;
+            border: 4px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .sgpa-circle span { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+        .sgpa-circle label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+
+        /* --- Subject Table --- */
+        .subject-card {
+            background: var(--surface);
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 20px; color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; background: rgba(255, 255, 255, 0.02); }
+        td { padding: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+
+        .grade-badge {
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            display: inline-block;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        .point-badge {
+            font-weight: 600;
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .result-pass { color: var(--success); font-weight: 700; }
+        .result-fail { color: var(--danger); font-weight: 700; }
+
+        @media (max-width: 600px) {
+            .profile-card { flex-direction: column; text-align: center; gap: 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="report-box">
-        <div class="header">
-            <h2>Detailed Examination Results</h2>
+
+<div class="report-container">
+    <a href="javascript:history.back()" class="back-link">← Back to Leaderboard</a>
+
+    <div class="profile-card">
+        <div class="info">
+            <p>VNR Vignana Jyothi Institute</p>
+            <h1>{{ student.name }}</h1>
+            <p>Roll No: {{ student.roll }}</p>
         </div>
-        <div class="student-info">
-            <div><strong>Name:</strong> {{ student.name }}</div>
-            <div><strong>Roll No:</strong> {{ student.roll }}</div>
+        <div class="sgpa-circle">
+            <span>{{ student.sgpa }}</span>
+            <label>SGPA</label>
         </div>
-<table>
+    </div>
+
+    <div class="subject-card">
+        <table>
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Subject Title</th>
-                    <th>Letter Grade</th>
-                    <th>Grade Points</th> <th>Result</th>
+                    <th>Subject Name</th>
+                    <th>Grade</th>
+                    <th>GP</th> <th>Result</th>
                 </tr>
             </thead>
             <tbody>
                 {% for sub in student.subjects %}
                 <tr>
-                    <td>{{ sub.code }}</td>
-                    <td>{{ sub.title }}</td>
-                    <td style="font-weight: bold;">{{ sub.grade }}</td>
-                    <td>{{ sub.points }}</td> <td class="{{ 'pass' if sub.result == 'PASS' else 'fail' }}">{{ sub.result }}</td>
+                    <td>
+                        <div style="font-weight: 600;">{{ sub.title }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Code: {{ sub.code }}</div>
+                    </td>
+                    <td><span class="grade-badge">{{ sub.grade }}</span></td>
+                    <td><span class="point-badge">{{ sub.points }}</span></td> <td class="{{ 'result-pass' if sub.result == 'PASSED' else 'result-fail' }}">
+                        {{ sub.result }}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <div class="footer">
-            Semester SGPA: {{ student.sgpa }}
-        </div>
     </div>
+
+    <p style="text-align: center; color: var(--text-dim); margin-top: 30px; font-size: 0.8rem;">
+        Disclaimer: This is an automated summary generated for reference only.
+    </p>
+</div>
+
 </body>
 </html>

@@ -1,3 +1,7 @@
-Flask==3.0.0
-requests==2.31.0
-beautifulsoup4==4.12.2
+flask
+flask-caching
+flask-limiter
+beautifulsoup4
+requests
+python-dotenv
+gunicorn

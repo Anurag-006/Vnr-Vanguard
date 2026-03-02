@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ section }} Analytics | VNR Vanguard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f1a; --surface: #161b2c; --accent: #38bdf8;
+            --text-main: #f1f5f9; --text-dim: #94a3b8; --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body { background: var(--bg); color: var(--text-main); font-family: "Plus Jakarta Sans", sans-serif; padding: 40px; margin: 0; }
+        .container { max-width: 1100px; margin: auto; }
+        
+        h1 { font-size: 2.5rem; font-weight: 800; margin: 10px 0 30px 0; letter-spacing: -1px; }
+        .back-link { color: var(--accent); text-decoration: none; font-weight: 600; display: inline-block; margin-bottom: 10px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        
+        /* --- Stat Cards --- */
+        .stat-card { background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.05); text-align: center; }
+        .stat-card h3 { margin: 0 0 20px 0; color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 3.5rem; font-weight: 800; color: var(--accent); display: block; margin-bottom: 5px; }
+        .label-text { color: var(--text-dim); font-weight: 600; }
+
+        /* --- Bar Charts --- */
+        .chart-container { text-align: left; }
+        .chart-row { display: flex; align-items: center; margin-bottom: 12px; gap: 15px; }
+        .bar-label { width: 50px; font-weight: 800; font-size: 0.85rem; color: var(--text-dim); }
+        .subject-label { width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; font-size: 0.85rem; }
+        
+        .bar-container { flex-grow: 1; background: #1e293b; height: 10px; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--accent); transition: width 1s ease-in-out; }
+        .count-text { width: 45px; text-align: right; font-size: 0.85rem; font-weight: 700; color: var(--accent); }
+
+        @media (max-width: 600px) {
+            body { padding: 20px; }
+            .value { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="javascript:history.back()" class="back-link">← Back to Leaderboard</a>
+        <h1>{{ section }} Analytics</h1>
+
+        <div class="grid">
+            <div class="stat-card">
+                <h3>Class Performance</h3>
+                <span class="value">{{ stats.pass_percentage }}%</span>
+                <span class="label-text">Overall Pass Rate</span>
+            </div>
+
+            <div class="stat-card">
+                <h3>Average Standing</h3>
+                <span class="value">{{ stats.avg_sgpa }}</span>
+                <span class="label-text">Section Average SGPA</span>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Total Strength</h3>
+                <span class="value">{{ stats.total }}</span>
+                <span class="label-text">Students Scraped</span>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 20px;">
+            <div class="stat-card chart-container">
+                <h3>Grade Distribution</h3>
+                {% if stats.total > 0 %}
+                    {# Using dictsort to ensure O, A+, A, etc are ordered nicely #}
+                    {% for grade, count in stats.grades.items() %}
+                        {% set percent = (count / stats.total * 100) %}
+                        <div class="chart-row">
+                            <span class="bar-label">{{ grade }}</span>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width: {{ percent }}%;"></div>
+                            </div>
+                            <span class="count-text">{{ count }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-dim)">Insufficient data for distribution.</p>
+                {% endif %}
+            </div>
+
+            <div class="stat-card chart-container">
+                <h3>Subject Pass Rates</h3>
+                {% for sub, data in stats.subjects.items() %}
+                    {% set sub_total = data.pass + data.fail %}
+                    {% if sub_total > 0 %}
+                        {% set rate = (data.pass / sub_total * 100) | round %}
+                        <div class="chart-row">
+                            <span class="subject-label" title="{{ sub }}">{{ sub }}</span>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width: {{ rate }}%; background: var(--success);"></div>
+                            </div>
+                            <span class="count-text" style="color: var(--success);">{{ rate }}%</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="footer">
+            Generated by VNR Vanguard Analytics Engine • {{ section }} Batch
+        </div>
+    </div>
+</body>
+</html>
