@@ -6,46 +6,34 @@ from scraper.utils import generate_roll_numbers, safe_sgpa
 from scraper.constants import SECTION_INFO
 from collections import Counter
 
-# Initialize Blueprint
 main_bp = Blueprint('main', __name__)
-
-# Configure FileSystem Cache
-cache = Cache(config={
-    'CACHE_TYPE': 'FileSystemCache', 
-    'CACHE_DIR': 'flask_cache',
-    'CACHE_DEFAULT_TIMEOUT': 86400
-})
-
+cache = Cache() # Initialized via factory in app.py
 STATS = {"hits": 0, "scrapes": 0}
 
 def get_cache_timestamp(key):
-    """Calculates cache filename using MD5 to get last modified time."""
     try:
         key_hash = hashlib.md5(key.encode('utf-8')).hexdigest()
-        cache_path = os.path.join('flask_cache', key_hash)
+        # Ensure we look in the absolute path defined in app.config
+        cache_path = os.path.join(current_app.config['CACHE_DIR'], key_hash)
         if os.path.exists(cache_path):
             ts = os.path.getmtime(cache_path)
             return datetime.datetime.fromtimestamp(ts).strftime('%I:%M %p, %d %b')
     except Exception as e:
-        print(f"Timestamp Error: {e}")
+        current_app.logger.error(f"Timestamp Error: {e}")
     return None
 
 @main_bp.route('/')
 def index():
-    # 1. Setup initial variables
     section = request.args.get('section')
     year = request.args.get('year')
     exams = fetch_active_exams()
     default_exam = list(exams.keys())[0] if exams else "7463"
     selected_exam = request.args.get('exam', default_exam)
 
-    # 2. Empty State Handling
     if not section or not year:
         return render_template('dashboard.html', students=None, sections=SECTION_INFO.keys(),
                                available_exams=exams, selected_exam=selected_exam)
 
-    # 3. Apply Rate Limiting only to the scraping logic
-    # This allows users to browse existing cache freely but limits NEW scrapes.
     cache_key = f"{section}_{year}_{selected_exam}"
     data = cache.get(cache_key)
     last_updated = get_cache_timestamp(cache_key)
@@ -53,9 +41,9 @@ def index():
     if data:
         STATS["hits"] += 1
     else:
-        # Wrap the scrape in a limited block to prevent spamming the college portal
+        # Protect the portal with a strict scrape-only limit
         @current_app.limiter.limit("5 per minute")
-        def scrape_batch():
+        def scrape_logic():
             STATS["scrapes"] += 1
             rolls = generate_roll_numbers(year, section, SECTION_INFO)
             batch_data = fetch_batch(rolls, selected_exam)
@@ -64,22 +52,15 @@ def index():
             return batch_data
         
         try:
-            data = scrape_batch()
+            data = scrape_logic()
             last_updated = "Just now"
         except Exception:
-            # If rate limit is hit, current_app.limiter will raise 429 automatically
             abort(429)
 
-    return render_template(
-        'dashboard.html', 
-        students=data, 
-        sections=SECTION_INFO.keys(), 
-        selected_section=section, 
-        selected_year=year,
-        available_exams=exams, 
-        selected_exam=selected_exam,
-        last_updated=last_updated
-    )
+    return render_template('dashboard.html', students=data, sections=SECTION_INFO.keys(), 
+                           selected_section=section, selected_year=year,
+                           available_exams=exams, selected_exam=selected_exam,
+                           last_updated=last_updated)
 
 @main_bp.route('/report/<roll_no>')
 def report_card(roll_no):

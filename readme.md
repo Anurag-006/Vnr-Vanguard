@@ -1,62 +1,81 @@
-# 🎓 College Results Dashboard
+# 🚀 VNR Vanguard: Results Engine
 
-A dynamic web application built with **Flask** and **BeautifulSoup** that automates the retrieval of academic results from the college portal. It transforms a manual, one-by-one search process into a centralized leaderboard and detailed report card viewer.
+**VNR Vanguard** is a high-performance academic analytics suite built for students of VNRVJIET. It transforms the raw, static data from the college results portal into a dynamic, searchable, and insightful leaderboard with real-time analytics.
 
-## 🚀 Features
-- **Automated Scraping:** Iteratively fetches results for an entire class using their Roll Numbers.
-- **Leaderboard View:** Displays a sorted list of students ranked by their **SGPA**.
-- **Detailed Report Cards:** Clicking a student's name opens their full subject-wise marksheet in a new browser tab.
-- **Real-time Processing:** Data is fetched directly from the source portal on demand.
+## 🌟 Key Features
+
+* **⚡ High-Speed Scraping:** Utilizes `ThreadPoolExecutor` (Multi-threading) to fetch and parse an entire section's results (60+ students) in under 20 seconds.
+* **🏆 Subject Topper Sorting:** A custom-built sorting engine that allows users to re-rank the leaderboard based on performance in a specific subject.
+* **📊 Class Analytics:** Deep-dive statistics page featuring grade distribution (O through F) and subject-wise pass/fail percentages.
+* **💎 Premium UI:** A modern dark-mode interface built with "Plus Jakarta Sans," featuring Neon Blue accents, hover effects, and 🏆 icons for perfect scores.
+* **💾 Smart Caching:** MD5-hashed FileSystem caching persists results for 24 hours, significantly reducing redundant load on college servers.
+* **🛡️ Production-Grade Security:** Integrated **Rate Limiting** to prevent IP blacklisting and a password-protected admin dashboard for cache management.
+
+---
 
 ## 🛠️ Tech Stack
-- **Backend:** Python 3.12+
-- **Framework:** Flask
-- **Web Scraping:** Requests, BeautifulSoup4
-- **Templating:** Jinja2 (HTML/CSS)
 
-## 📋 Prerequisites
-Before running the app, ensure you have the following installed:
-- **Python 3.12** or higher.
-- An active internet connection to reach `vnrvjietexams.net`.
+* **Backend:** Python 3.10+ / Flask
+* **Scraping:** BeautifulSoup4 / Requests / Concurrency
+* **Frontend:** HTML5 / CSS3 (Grid & Flexbox) / JavaScript (ES6+)
+* **Caching:** Flask-Caching (FileSystem)
+* **Security:** Flask-Limiter
+* **Deployment:** Render / Gunicorn
 
-## ⚙️ Installation & Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Anurag-006/Result-Checker.git
-   cd Result-Checker
-   ```
-
-2. **Create a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: .venv\Scripts\activate.bat
-    ```
-3. **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt    
-    ```
-4. **Run the application:**
-    ```bash
-    python app/app.py
-    ```
-5. **Access the Dashboard:**
-    Open your browser and navigate to http://127.0.0.1:5000
+---
 
 ## 📂 Project Structure
 
+```text
+/vnr-vanguard
+├── app/                   # Root application directory
+│   ├── app.py             # App Factory, Configuration & Rate Limiting
+│   ├── scraper/           # Multi-threaded scraping engine & utils
+│   ├── routes/            # Blueprint routing & Analytics logic
+│   ├── templates/         # Jinja2 HTML templates
+│   └── flask_cache/       # Persistent serialized data
+├── Procfile               # Deployment instructions for Render
+└── requirements.txt       # Production dependencies
 ```
-.
-├── app.py              # Main Flask application & scraping logic
-├── requirements.txt    # Project dependencies
-├── templates/          # HTML templates (Jinja2)
-│   ├── dashboard.html  # Main leaderboard view
-│   └── report_card.html # Individual student marksheet
-└── README.md           # Project documentation
-```
 
-## ⚠️ Important Notes
+---
 
-- Rate Limiting: The script includes a time.sleep() delay between requests to be respectful to the college server.
+## 🚀 Deployment Guide (Render)
 
-- Session Cookies: If the portal requires authentication, ensure the headers in app.py are updated with a valid session cookie from your browser's Network tab.
+### 1. Repository Setup
+Push the code to GitHub. Ensure `flask_cache/`, `logs/`, and `.env` are added to your `.gitignore` to keep student data and your secret keys private.
+
+### 2. Render Settings
+1. Create a new **Web Service** on Render and connect your repository.
+2. Configure the build environment:
+   * **Root Directory:** *(Leave blank)*
+   * **Runtime:** `Python 3`
+   * **Build Command:** `pip install -r app/requirements.txt`
+   * **Start Command:** `gunicorn --chdir app app:app`
+
+### 3. Environment Variables
+Add the following in the **Environment** tab on Render:
+* `MY_SECRET_KEY`: Your admin password for cache flushing (used in `/status` and `/refresh`).
+* `YEAR_PREFIX`: The default batch year (e.g., `23`).
+
+---
+
+## 🛡️ Security & Ethics
+
+This project is built with a strict **"Respect the Portal"** philosophy:
+1. **Rate Limiting:** Users are strictly limited to 5 scrape requests per minute to prevent overwhelming the college network.
+2. **On-Demand Scraping:** The application only fetches data when explicitly requested by a user; no background "crawling" or mass data harvesting occurs.
+3. **Anonymity:** No personal credentials (passwords) are collected, requested, or stored by the application.
+
+---
+
+## 📈 System Monitoring
+
+The engine includes a `/status` dashboard to track system health:
+* **Cache Hits:** Requests served instantly from existing disk data.
+* **Cache Scrapes:** Fresh fetches triggered from the college portal.
+* **Disk Health:** Monitoring the number of unique cached batches currently stored on the server.
+
+---
+
+**Developed with 💻 by Anurag Kosuri** *Computer Science & Business Systems, VNRVJIET*
