@@ -13,7 +13,6 @@ STATS = {"hits": 0, "scrapes": 0}
 def get_cache_timestamp(key):
     try:
         key_hash = hashlib.md5(key.encode('utf-8')).hexdigest()
-        # Ensure we look in the absolute path defined in app.config
         cache_path = os.path.join(current_app.config['CACHE_DIR'], key_hash)
         if os.path.exists(cache_path):
             ts = os.path.getmtime(cache_path)
@@ -39,14 +38,21 @@ def index():
     last_updated = get_cache_timestamp(cache_key)
 
     if data:
+        print(f"DEBUG: Cache HIT for {cache_key}")
         STATS["hits"] += 1
     else:
+        print(f"DEBUG: Cache MISS. Starting Scrape for {section}-{year}")
+        
         # Protect the portal with a strict scrape-only limit
         @current_app.limiter.limit("5 per minute")
         def scrape_logic():
             STATS["scrapes"] += 1
             rolls = generate_roll_numbers(year, section, SECTION_INFO)
+            print(f"DEBUG: Generated {len(rolls)} roll numbers for fetching.")
+            
             batch_data = fetch_batch(rolls, selected_exam)
+            print(f"DEBUG: fetch_batch returned {len(batch_data)} student records.")
+            
             batch_data.sort(key=safe_sgpa, reverse=True)
             cache.set(cache_key, batch_data, timeout=86400)
             return batch_data
@@ -54,7 +60,8 @@ def index():
         try:
             data = scrape_logic()
             last_updated = "Just now"
-        except Exception:
+        except Exception as e:
+            print(f"CRITICAL ERROR in scrape_logic: {e}")
             abort(429)
 
     return render_template('dashboard.html', students=data, sections=SECTION_INFO.keys(), 
