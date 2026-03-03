@@ -13,11 +13,14 @@ def create_app():
     app = Flask(__name__)
 
     # 1. Absolute Path Configuration
-    # This ensures the cache and logs stay inside the app directory on the server
     base_dir = os.path.abspath(os.path.dirname(__file__))
     
+    # 🛠️ THE FIX: Auto-create the cache folder so Windows doesn't crash
+    cache_dir = os.path.join(base_dir, 'flask_cache')
+    os.makedirs(cache_dir, exist_ok=True)
+    
     app.config['CACHE_TYPE'] = 'FileSystemCache'
-    app.config['CACHE_DIR'] = os.path.join(base_dir, 'flask_cache')
+    app.config['CACHE_DIR'] = cache_dir
     app.config['CACHE_DEFAULT_TIMEOUT'] = 86400  # 24 Hours
     app.secret_key = os.getenv("MY_SECRET_KEY", "vnr_secret_2026")
 
@@ -25,7 +28,6 @@ def create_app():
     cache.init_app(app)
 
     # 3. Initialize Rate Limiter
-    # Limiting scrapes protects your IP from VNR portal blacklisting
     limiter = Limiter(
         key_func=get_remote_address,
         app=app,
@@ -36,8 +38,7 @@ def create_app():
 
     # 4. Professional Logging
     log_dir = os.path.join(base_dir, 'logs')
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
+    os.makedirs(log_dir, exist_ok=True)
     
     file_handler = logging.FileHandler(os.path.join(log_dir, 'vnr_engine.log'))
     file_handler.setFormatter(logging.Formatter(
