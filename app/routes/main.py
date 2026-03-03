@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, Response, abort, current_app
 from flask_caching import Cache
-import io, csv, os, re, datetime, hashlib
+import io, csv, os, re, datetime, hashlib, requests
 from scraper.engine import fetch_active_exams, fetch_batch, get_student_data
 from scraper.utils import generate_roll_numbers, safe_sgpa
 from scraper.constants import SECTION_INFO
@@ -43,7 +43,6 @@ def index():
     else:
         print(f"DEBUG: Cache MISS. Starting Scrape for {section}-{year}")
         
-        # Protect the portal with a strict scrape-only limit
         @current_app.limiter.limit("5 per minute")
         def scrape_logic():
             STATS["scrapes"] += 1
@@ -68,6 +67,27 @@ def index():
                            selected_section=section, selected_year=year,
                            available_exams=exams, selected_exam=selected_exam,
                            last_updated=last_updated)
+
+@main_bp.route('/debug/<roll_no>')
+def debug_html(roll_no):
+    """View raw HTML for a specific student to debug parsing."""
+    if request.args.get('key') != os.getenv("MY_SECRET_KEY"):
+        abort(403)
+        
+    exam_id = request.args.get('exam', "7463")
+    # Using the primary results URL
+    url = "https://vnrvjietexams.net/EduPrime3Exam/Results"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+    
+    try:
+        res = requests.get(url, params={'htno': roll_no, 'examId': exam_id}, headers=headers, timeout=10, verify=False)
+        print(f"DEBUG ROUTE: Fetched {roll_no} - Status {res.status_code}")
+        # Return as plain text so the browser doesn't execute styles or scripts
+        return Response(res.text, mimetype='text/plain')
+    except Exception as e:
+        return f"Debug Fetch Failed: {str(e)}"
 
 @main_bp.route('/report/<roll_no>')
 def report_card(roll_no):
